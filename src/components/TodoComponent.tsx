@@ -46,7 +46,6 @@ export const TodoComponent: React.FC<Props> = ({
   };
 
   const saveTitle = async () => {
-    // Enter і blur можуть відбутися майже одночасно.
     if (!editingActive.current || isSaving.current) {
       return;
     }
@@ -92,6 +91,7 @@ export const TodoComponent: React.FC<Props> = ({
       <label
         className="todo__status-label"
         htmlFor={`todo-input-${todo.id}`}
+        aria-label={todo.title}
       >
         <input
           id={`todo-input-${todo.id}`}

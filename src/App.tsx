@@ -32,6 +32,7 @@ export const App: React.FC = () => {
   const timerId = useRef(0);
 
   const handleSetError = (newError: ErrorMessage) => {
+    console.log('handleSetError', newError);
     window.clearTimeout(timerId.current);
 
     timerId.current = window.setTimeout(() => {
@@ -120,21 +121,22 @@ export const App: React.FC = () => {
       });
   };
 
-  const deleteTodo = (todoId: number) => {
+  const deleteTodo = (todoId: number): Promise<void> => {
     setIsInputDisabled(true);
     setLoadingTodoIds((currentIds: number[]) => [...currentIds, todoId]);
 
     return removeTodo(todoId)
       .then(() => {
         setTodos(ids => ids.filter(todo => todo.id !== todoId));
+        focusedInput.current?.focus();
       })
-      .catch(() => {
+      .catch(error => {
         handleSetError(ErrorMessage.DeleteTodo);
+        throw error;
       })
       .finally(() => {
         setIsInputDisabled(false);
         setLoadingTodoIds(ids => ids.filter(id => id !== todoId));
-        focusedInput.current?.focus();
       });
   };
 
@@ -227,6 +229,7 @@ export const App: React.FC = () => {
   }
 
   const handleRename = (todoId: number, todoTitle: string) => {
+    console.log('handleRename', todoId, todoTitle);
     const preparedTitle = todoTitle.trim();
 
     setErrorMessage(ErrorMessage.None);
