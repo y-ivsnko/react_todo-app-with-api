@@ -32,7 +32,6 @@ export const App: React.FC = () => {
   const timerId = useRef(0);
 
   const handleSetError = (newError: ErrorMessage) => {
-    console.log('handleSetError', newError);
     window.clearTimeout(timerId.current);
 
     timerId.current = window.setTimeout(() => {
@@ -121,21 +120,30 @@ export const App: React.FC = () => {
       });
   };
 
-  const deleteTodo = (todoId: number): Promise<void> => {
-    setIsInputDisabled(true);
+  const deleteTodo = (todoId: number, fromEditing = false): Promise<void> => {
+    if (!fromEditing) {
+      setIsInputDisabled(true);
+    }
+
     setLoadingTodoIds((currentIds: number[]) => [...currentIds, todoId]);
 
     return removeTodo(todoId)
       .then(() => {
         setTodos(ids => ids.filter(todo => todo.id !== todoId));
-        focusedInput.current?.focus();
+
+        if (fromEditing) {
+          focusedInput.current?.focus();
+        }
       })
       .catch(error => {
         handleSetError(ErrorMessage.DeleteTodo);
         throw error;
       })
       .finally(() => {
-        setIsInputDisabled(false);
+        if (!fromEditing) {
+          setIsInputDisabled(false);
+        }
+
         setLoadingTodoIds(ids => ids.filter(id => id !== todoId));
       });
   };
@@ -229,13 +237,12 @@ export const App: React.FC = () => {
   }
 
   const handleRename = (todoId: number, todoTitle: string) => {
-    console.log('handleRename', todoId, todoTitle);
     const preparedTitle = todoTitle.trim();
 
     setErrorMessage(ErrorMessage.None);
 
     if (!preparedTitle) {
-      return deleteTodo(todoId);
+      return deleteTodo(todoId, true);
     }
 
     setLoadingTodoIds(currentIds => [...currentIds, todoId]);
@@ -279,7 +286,9 @@ export const App: React.FC = () => {
           todos={preperedTodos}
           tempTodo={tempTodo}
           todoId={loadingTodoIds}
-          onDelete={deleteTodo}
+          onDelete={id => {
+            void deleteTodo(id).catch(() => {});
+          }}
           onChangeStatus={changeStatusTodo}
           onRename={handleRename}
         />
