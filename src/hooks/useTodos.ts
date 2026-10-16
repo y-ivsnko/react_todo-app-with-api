@@ -85,7 +85,7 @@ export const useTodos = () => {
   const addTodo = () => {
     const preperedTitle = query.trim();
 
-    if (preperedTitle.trim().length === 0) {
+    if (preperedTitle.length === 0) {
       return handleSetError(ErrorMessage.Title);
     }
 
@@ -197,7 +197,7 @@ export const useTodos = () => {
     setIsInputDisabled(true);
     let filteredTodos = [...todos];
 
-    if (!areAllTodosActive) {
+    if (!areAllTodosCompleted) {
       filteredTodos = [...todos].filter(todo => !todo.completed);
     }
 
@@ -207,21 +207,31 @@ export const useTodos = () => {
     ]);
 
     try {
-      const result = await Promise.all(
+      const result = await Promise.allSettled(
         filteredTodos.map(todo =>
           updateTodo(todo.id, { completed: !todo.completed }),
         ),
       );
 
+      const updatedTodos: Todo[] = [];
+
+      result.forEach(item => {
+        if (item.status === 'fulfilled') {
+          updatedTodos.push(item.value);
+        }
+      });
+
       setTodos(currentTodos =>
         currentTodos.map(todo => {
-          const updated = result.find(r => r.id === todo.id);
+          const updated = updatedTodos.find(r => r.id === todo.id);
 
-          return updated || todo;
+          return updated ?? todo;
         }),
       );
-    } catch {
-      handleSetError(ErrorMessage.UpdateTodo);
+
+      if (result.some(item => item.status === 'rejected')) {
+        handleSetError(ErrorMessage.UpdateTodo);
+      }
     } finally {
       setIsInputDisabled(false);
       focusedInput.current?.focus();
